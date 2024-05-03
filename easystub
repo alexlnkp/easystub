@@ -76,6 +76,6 @@ echo "Adding the new entry..."
 echo
 
 # Add the entry itself.
-sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p ${_SYSTEMS_ROOT_PARTITION_NUMBER} -L "${_EFIS_BOOT_ENTRY_LABEL}" -l ${_LINUX_LOADER_PATH} -u " root=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
+sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p ${_SYSTEMS_ROOT_PARTITION_NUMBER} -L "${_EFIS_BOOT_ENTRY_LABEL}" -l ${_LINUX_LOADER_PATH} -u " root=UUID=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
 
 exit 0
