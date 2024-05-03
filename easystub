@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # UNCOMMENT THIS LINE IF YOU'VE NOT SET THE ENVIRONMENT VARIABLE `EASYSTUB_CONF_FILE_PATH` TO AN APPROPRIATE CONFIG FILE PATH.
-# EASYSTUB_CONF_FILE_PATH="config.conf"
+# EASYSTUB_CONF_FILE_PATH="example_config.conf"
 
 # NOTE: If you don't plan on using the environment variable EASYSTUB_CONF_FILE_PATH, then you need to replace the `-z` with `! -d`.
 if [[ -z $EASYSTUB_CONF_FILE_PATH ]]; then
@@ -40,7 +40,7 @@ function DisplayConfig {
     echo -e "Boot entry's label: \033[0;36m${_EFIS_BOOT_ENTRY_LABEL}\033[0m"
     echo
     echo -e "Main disk of the system: \033[0;36m${_SYSTEMS_MAIN_DRIVE}\033[0m"
-    echo -e "Root partition's index:  \033[0;36m${_SYSTEMS_ROOT_PARTITION_NUMBER}\033[0m"
+    echo -e "Boot partition's index:  \033[0;36m${_SYSTEMS_BOOT_PARTITION_NUMBER}\033[0m"
     echo -e "Root partition's UUID:   \033[0;36m${_ROOT_UUID}\033[0m"
     echo
     echo -e "Linux loader:    \033[0;36m${_LINUX_LOADER_PATH}\033[0m"
@@ -48,12 +48,19 @@ function DisplayConfig {
     echo
     echo -e "Kernel options list: \033[0;36m${_KERNEL_OPTIONS}\033[0m"
     echo
+    echo -e "\033[0;36mYour config points to this partition for Boot:\033[0m"
+    echo -e "----| $(lsblk -lp | grep $_FULL_PARTITION_NAME_FORMATTED)"
+    echo
     echo -e "\033[0;91mCAREFULLY REVIEW TO ENSURE THERE ARE NO ERRORS IN CONFIGURATION, OTHERWISE SYSTEM MAY FAIL TO BOOT\033[0m"
     echo
 }
 # ----------------
 
-
+if [[ $_SYSTEMS_MAIN_DRIVE =~ ^/dev/nvme ]]; then
+    _FULL_PARTITION_NAME_FORMATTED=${_SYSTEMS_MAIN_DRIVE}p${_SYSTEMS_BOOT_PARTITION_NUMBER}
+elif [[ $_SYSTEMS_MAIN_DRIVE =~ ^/dev/sd ]]; then
+    _FULL_PARTITION_NAME_FORMATTED=${_SYSTEMS_MAIN_DRIVE}${_SYSTEMS_BOOT_PARTITION_NUMBER}
+fi
 
 DisplayConfig
 
@@ -76,6 +83,6 @@ echo "Adding the new entry..."
 echo
 
 # Add the entry itself.
-sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p ${_SYSTEMS_ROOT_PARTITION_NUMBER} -L "${_EFIS_BOOT_ENTRY_LABEL}" -l ${_LINUX_LOADER_PATH} -u " root=UUID=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
+sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p ${_SYSTEMS_BOOT_PARTITION_NUMBER} -L "${_EFIS_BOOT_ENTRY_LABEL}" -l ${_LINUX_LOADER_PATH} -u " root=UUID=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
 
 exit 0
