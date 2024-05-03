@@ -3,7 +3,8 @@
 # UNCOMMENT THIS LINE IF YOU'VE NOT SET THE ENVIRONMENT VARIABLE `EASYSTUB_CONF_FILE_PATH` TO AN APPROPRIATE CONFIG FILE PATH.
 # EASYSTUB_CONF_FILE_PATH="config.conf"
 
-if [[ ! -d $EASYSTUB_CONF_FILE_PATH ]]; then
+# NOTE: If you don't plan on using the environment variable EASYSTUB_CONF_FILE_PATH, then you need to replace the `-z` with `! -d`.
+if [[ -z $EASYSTUB_CONF_FILE_PATH ]]; then
     echo "Unable to open the config file! Did you set the environment variable \`EASYSTUB_CONF_FILE_PATH\`?"
     exit 1
 fi
