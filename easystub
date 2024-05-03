@@ -1,0 +1,80 @@
+#!bin/bash
+
+# UNCOMMENT THIS LINE IF YOU'VE NOT SET THE ENVIRONMENT VARIABLE `EASYSTUB_CONF_FILE_PATH` TO AN APPROPRIATE CONFIG FILE PATH.
+# EASYSTUB_CONF_FILE_PATH="config.conf"
+
+if [[ ! -d $EASYSTUB_CONF_FILE_PATH ]]; then
+    echo "Unable to open the config file! Did you set the environment variable \`EASYSTUB_CONF_FILE_PATH\`?"
+    exit 1
+fi
+
+source ${EASYSTUB_CONF_FILE_PATH}
+
+# Helper functions
+function askYesNo {
+    QUESTION=$1
+    DEFAULT=$2
+    if [ "$DEFAULT" = true ]; then
+        OPTIONS="[Y/n]"
+        DEFAULT="y"
+    else
+        OPTIONS="[y/N]"
+        DEFAULT="n"
+    fi
+    read -p "$QUESTION $OPTIONS " -n 1 -s -r INPUT
+    INPUT=${INPUT:-${DEFAULT}}
+    echo ${INPUT}
+    if [[ "$INPUT" =~ ^[yY]$ ]]; then
+        ANSWER=true
+    else
+        ANSWER=false
+    fi
+}
+
+function DisplayConfig {
+    # Note: Root partition's index refers to the index of the partition on the main system disk on which the root directory is mounted on.
+    # The index is NOT 0-BASED. THE FIRST ENTRY IS AT INDEX 1, NOT 0.
+    echo "The config that will be used to create the new EFISTUB boot entry:"
+    echo
+    echo -e "Boot entry's label: \033[0;36m${_EFIS_BOOT_ENTRY_LABEL}\033[0m"
+    echo
+    echo -e "Main disk of the system: \033[0;36m${_SYSTEMS_MAIN_DRIVE}\033[0m"
+    echo -e "Root partition's index:  \033[0;36m${_SYSTEMS_ROOT_PARTITION_NUMBER}\033[0m"
+    echo -e "Root partition's UUID:   \033[0;36m${_ROOT_UUID}\033[0m"
+    echo
+    echo -e "Linux loader:    \033[0;36m${_LINUX_LOADER_PATH}\033[0m"
+    echo -e "Initramfs image: \033[0;36m${_LINUX_INITRAMFS_LINUX_IMAGE}\033[0m"
+    echo
+    echo -e "Kernel options list: \033[0;36m${_KERNEL_OPTIONS}\033[0m"
+    echo
+    echo -e "\033[0;91mCAREFULLY REVIEW TO ENSURE THERE ARE NO ERRORS IN CONFIGURATION, OTHERWISE SYSTEM MAY FAIL TO BOOT\033[0m"
+    echo
+}
+# ----------------
+
+
+
+DisplayConfig
+
+askYesNo "Proceed?" false
+
+if [[ $ANSWER = false ]]; then
+    exit 0
+fi
+
+echo
+echo "Removing entry under the same label in the efibootmgr if it exists..."
+echo
+
+# Remove the entry to re-add it;
+# `efibootmgr` does not allow to edit existing entries, therefore this is necessary.
+sudo efibootmgr -L "${_EFIS_BOOT_ENTRY_LABEL}" -B -u
+
+echo
+echo "Adding the new entry..."
+echo
+
+# Add the entry itself.
+sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p ${_SYSTEMS_ROOT_PARTITION_NUMBER} -L "${_EFIS_BOOT_ENTRY_LABEL}" -l ${_LINUX_LOADER_PATH} -u " root=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
+
+exit 0
