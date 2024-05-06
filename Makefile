@@ -21,7 +21,7 @@ install: check-user
 	@sudo cp -p easystub $(DESTDIR)$(PREFIX)/bin/easystub
 	
 	@mkdir -p /home/$(MAINUSER)/.config/easystub
-	@cp -p example.conf $(EASYSTUB_CONF_FILE_PATH)
+	@cp -u -p example.conf $(EASYSTUB_CONF_FILE_PATH)
 	@export EASYSTUB_CONF_FILE_PATH=$(EASYSTUB_CONF_FILE_PATH)
 
 uninstall: check-user
