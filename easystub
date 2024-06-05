@@ -4,70 +4,78 @@
 # EASYSTUB_CONF_FILE_PATH="example_config.conf"
 
 # NOTE: If you don't plan on using the environment variable EASYSTUB_CONF_FILE_PATH, then you need to replace the `-z` with `! -d`.
-if [[ -z $EASYSTUB_CONF_FILE_PATH ]]; then
-    echo "Unable to open the config file! Did you set the environment variable \`EASYSTUB_CONF_FILE_PATH\`?"
-    exit 1
+if [[ -z ${EASYSTUB_CONF_FILE_PATH} ]]; then
+	echo "Unable to open the config file! Did you set the environment variable 'EASYSTUB_CONF_FILE_PATH'?"
+	exit 1
 fi
 
-source ${EASYSTUB_CONF_FILE_PATH}
+# check if the first argument provided by user is a valid file path, if it is - try to source it
+if [[ -f $1 ]]; then
+	echo -e "Using config file at \033[0;36m$1\033[0m"
+	echo
+	EASYSTUB_CONF_FILE_PATH=$1
+fi
+
+source "${EASYSTUB_CONF_FILE_PATH}"
 
 # Helper functions
 function askYesNo {
-    QUESTION=$1
-    DEFAULT=$2
-    if [ "$DEFAULT" = true ]; then
-        OPTIONS="[Y/n]"
-        DEFAULT="y"
-    else
-        OPTIONS="[y/N]"
-        DEFAULT="n"
-    fi
-    read -p "$QUESTION $OPTIONS " -n 1 -s -r INPUT
-    INPUT=${INPUT:-${DEFAULT}}
-    echo ${INPUT}
-    if [[ "$INPUT" =~ ^[yY]$ ]]; then
-        ANSWER=true
-    else
-        ANSWER=false
-    fi
+	QUESTION=$1
+	DEFAULT=$2
+	if [[ ${DEFAULT} == true ]]; then
+		OPTIONS="[Y/n]"
+		DEFAULT="y"
+	else
+		OPTIONS="[y/N]"
+		DEFAULT="n"
+	fi
+	read -p "${QUESTION} ${OPTIONS} " -n 1 -s -r INPUT
+	INPUT=${INPUT:-${DEFAULT}}
+	echo "${INPUT}"
+	if [[ ${INPUT} =~ ^[yY]$ ]]; then
+		ANSWER=true
+	else
+		ANSWER=false
+	fi
 }
 
 function DisplayConfig {
-    # Note: Root partition's index refers to the index of the partition on the main system disk on which the root directory is mounted on.
-    # The index is NOT 0-BASED. THE FIRST ENTRY IS AT INDEX 1, NOT 0.
-    echo "The config that will be used to create the new EFISTUB boot entry:"
-    echo
-    echo -e "Boot entry's label: \033[0;36m${_EFIS_BOOT_ENTRY_LABEL}\033[0m"
-    echo
-    echo -e "Main disk of the system: \033[0;36m${_SYSTEMS_MAIN_DRIVE}\033[0m"
-    echo -e "Boot partition's index:  \033[0;36m${_SYSTEMS_BOOT_PARTITION_NUMBER}\033[0m"
-    echo -e "Root partition's UUID:   \033[0;36m${_ROOT_UUID}\033[0m"
-    echo
-    echo -e "Linux loader:    \033[0;36m${_LINUX_LOADER_PATH}\033[0m"
-    echo -e "Initramfs image: \033[0;36m${_LINUX_INITRAMFS_LINUX_IMAGE}\033[0m"
-    echo
-    echo -e "Kernel options list: \033[0;36m${_KERNEL_OPTIONS}\033[0m"
-    echo
-    echo -e "\033[0;36mYour config points to this partition for Boot:\033[0m"
-    echo -e "----| $(lsblk -lp | grep $_FULL_PARTITION_NAME_FORMATTED)"
-    echo
-    echo -e "\033[0;91mCAREFULLY REVIEW TO ENSURE THERE ARE NO ERRORS IN CONFIGURATION, OTHERWISE SYSTEM MAY FAIL TO BOOT\033[0m"
-    echo
+	__DETECTED_ROOT_PART_=$(lsblk -lp | grep "${_FULL_PARTITION_NAME_FORMATTED}")
+	# Note: Root partition's index refers to the index of the partition on the main system disk on which the root directory is mounted on.
+	# The index is NOT 0-BASED. THE FIRST ENTRY IS AT INDEX 1, NOT 0.
+	echo "The config that will be used to create the new EFISTUB boot entry:"
+	echo
+	echo -e "Boot entry's label: \033[0;36m${_EFIS_BOOT_ENTRY_LABEL}\033[0m"
+	echo
+	echo -e "Main disk of the system: \033[0;36m${_SYSTEMS_MAIN_DRIVE}\033[0m"
+	echo -e "Boot partition's index:  \033[0;36m${_SYSTEMS_BOOT_PARTITION_NUMBER}\033[0m"
+	echo -e "Root partition's UUID:   \033[0;36m${_ROOT_UUID}\033[0m"
+	echo
+	echo -e "Linux loader:    \033[0;36m${_LINUX_LOADER_PATH}\033[0m"
+	echo -e "Initramfs image: \033[0;36m${_LINUX_INITRAMFS_LINUX_IMAGE}\033[0m"
+	echo
+	echo -e "Kernel options list: \033[0;36m${_KERNEL_OPTIONS}\033[0m"
+	echo
+	echo -e "\033[0;36mYour config points to this partition for Boot:\033[0m"
+	echo -e "----| ${__DETECTED_ROOT_PART_}"
+	echo
+	echo -e "\033[0;91mCAREFULLY REVIEW TO ENSURE THERE ARE NO ERRORS IN CONFIGURATION, OTHERWISE SYSTEM MAY FAIL TO BOOT\033[0m"
+	echo
 }
 # ----------------
 
-if [[ $_SYSTEMS_MAIN_DRIVE =~ ^/dev/nvme ]]; then
-    _FULL_PARTITION_NAME_FORMATTED=${_SYSTEMS_MAIN_DRIVE}p${_SYSTEMS_BOOT_PARTITION_NUMBER}
-elif [[ $_SYSTEMS_MAIN_DRIVE =~ ^/dev/sd ]]; then
-    _FULL_PARTITION_NAME_FORMATTED=${_SYSTEMS_MAIN_DRIVE}${_SYSTEMS_BOOT_PARTITION_NUMBER}
+if [[ ${_SYSTEMS_MAIN_DRIVE} =~ ^/dev/nvme ]]; then
+	_FULL_PARTITION_NAME_FORMATTED=${_SYSTEMS_MAIN_DRIVE}p${_SYSTEMS_BOOT_PARTITION_NUMBER}
+elif [[ ${_SYSTEMS_MAIN_DRIVE} =~ ^/dev/sd ]]; then
+	_FULL_PARTITION_NAME_FORMATTED=${_SYSTEMS_MAIN_DRIVE}${_SYSTEMS_BOOT_PARTITION_NUMBER}
 fi
 
 DisplayConfig
 
 askYesNo "Proceed?" false
 
-if [[ $ANSWER = false ]]; then
-    exit 0
+if [[ ${ANSWER} == false ]]; then
+	exit 0
 fi
 
 echo
@@ -83,6 +91,6 @@ echo "Adding the new entry..."
 echo
 
 # Add the entry itself.
-sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p ${_SYSTEMS_BOOT_PARTITION_NUMBER} -L "${_EFIS_BOOT_ENTRY_LABEL}" -l ${_LINUX_LOADER_PATH} -u " root=UUID=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
+sudo efibootmgr -c -d "${_SYSTEMS_MAIN_DRIVE}" -p "${_SYSTEMS_BOOT_PARTITION_NUMBER}" -L "${_EFIS_BOOT_ENTRY_LABEL}" -l "${_LINUX_LOADER_PATH}" -u " root=UUID=${_ROOT_UUID} rw ${_KERNEL_OPTIONS} initrd=${_LINUX_INITRAMFS_LINUX_IMAGE}"
 
 exit 0

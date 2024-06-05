@@ -1,5 +1,7 @@
 An extremely simple EFISTUB entry generator. Made and tested on Arch, however it should work on other distros as well.
 You could define environment variable `EASYSTUB_CONF_FILE_PATH` to the config filepath, or you could just set it to the path to the config inside the shell script itself, it's your choice.
 
+You can also specify the config file as an argument for the easystub. e.g. `easystub ~/path/to/config/file.conf`, it will try to use it if the config is valid.
+
 WARNING: easystub won't work "out-of-the-box". You still need to configure at least the root partition UUID and your system's main drive!
 If you have a custom kernel, then you'll also need to configure the linux loader and initramfs paths.
